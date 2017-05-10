@@ -1,8 +1,8 @@
 import math
-import requests
 import json
+import grequests
 
-URL = 'https://backend-challenge-fall-2017.herokuapp.com/orders.json'
+URL = ['https://backend-challenge-fall-2017.herokuapp.com/orders.json']
 
 
 def get_num_pages(pagination_data):
@@ -11,12 +11,6 @@ def get_num_pages(pagination_data):
     total = pagination_data['total']
 
     return math.ceil(total / (curr * per_page))
-
-
-def get_page(page):
-    payload = {'page': page}
-    r = requests.get(URL, params=payload)
-    return r.json()
 
 
 def unfulfilled_order_contains_cookies(order):
@@ -40,16 +34,25 @@ def order_key(order):
 
 
 def main():
-    r = requests.get(URL)
-    data = r.json()
+    request = (grequests.get(u) for u in URL)
+    response = grequests.map(request)
+    data = [r.json() for r in response]
+    data = data[0]
+
     output = {'remaining_cookies': data['available_cookies'], 'unfulfilled_orders': []}
+    urls = [URL[0] + "?page=%d" % i for i in range(1, get_num_pages(data['pagination']) + 1)]
+
+    requests = (grequests.get(u) for u in urls)
+    responses = grequests.map(requests)
+    result = [r.json() for r in responses]
+
     orders = []
-    for i in range(get_num_pages(data['pagination'])):
-        page = get_page(i + 1)
-        orders.extend(page['orders'])
+    for order in result:
+        orders.extend(order['orders'])
 
     cookie_orders = list(filter(unfulfilled_order_contains_cookies, orders))
     cookie_orders = sorted(cookie_orders, key=order_key, reverse=True)
+
 
     for order in cookie_orders:
         num_cookies = order_num_cookies(order)
