@@ -47,3 +47,10 @@ Output (in JSON)
 $ pip install -r requirements.txt
 $ python solution.py
 ```
+
+```json
+{
+  "remaining_cookies": 0,
+  "unfulfilled_orders": [8, 7, 11]
+}
+```
